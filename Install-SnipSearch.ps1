@@ -60,8 +60,10 @@ foreach ($shortcut in $shortcuts) {
     "{0}  {1}" -f $shortcut.Key, $shortcut.Name
 }
 
-# Barcode reading is the one part that needs something Windows does not ship.
-if (-not (& (Join-Path $PSScriptRoot 'src\Get-WslPython.ps1') -Refresh)) {
-    Write-Warning 'No WSL interpreter with OpenCV found, so QR and barcode reading will be skipped.'
-    Write-Warning 'Install it with: wsl python3 -m pip install opencv-python-headless'
+# Barcode reading is the one part Windows cannot do on its own.
+try {
+    $assembly = & (Join-Path $PSScriptRoot 'src\Install-BarcodeReader.ps1')
+    "ready     $assembly"
+} catch {
+    Write-Warning "QR and barcode reading will be skipped: $_"
 }

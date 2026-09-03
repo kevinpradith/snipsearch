@@ -40,28 +40,23 @@ Advanced gestures > Three-finger gestures > Taps > Custom shortcut, and record
 
 ## Requirements
 
-Everything except barcode reading ships with Windows. Capture is the Windows
-snip overlay (`ms-screenclip:`), so multi-monitor, DPI scaling and HDR stay
-Windows' problem, and OCR is `Windows.Media.Ocr`, which runs on the machine.
+Windows 11 and nothing else installed. Capture is the Windows snip overlay
+(`ms-screenclip:`), so multi-monitor, DPI scaling and HDR stay Windows'
+problem; OCR is `Windows.Media.Ocr`; the upload is the `curl.exe` that ships
+with Windows.
 
-Barcode reading needs OpenCV under WSL:
-
-```powershell
-wsl python3 -m pip install opencv-python-headless
-```
-
-The install script warns if it cannot find an interpreter that has it, and
-without one that step is skipped rather than failing. `Get-WslPython.ps1`
-probes the usual interpreters and caches its answer under `%LOCALAPPDATA%`.
+The one gap is barcodes, for which Windows has no API. The installer fetches
+[ZXing.NET](https://github.com/micjahn/ZXing.Net) from NuGet, checks it against
+a known SHA-256, and keeps it under `%LOCALAPPDATA%\SnipSearch`. If that
+download fails, barcode reading is skipped and everything else still works.
 
 ## Layout
 
 ```
-Install-SnipSearch.ps1     registers or removes the hotkeys
-src/Invoke-SnipSearch.ps1  capture and routing
-src/Get-WslPython.ps1      finds a WSL interpreter with OpenCV
-src/scan_barcode.py        barcode decoding, run under WSL
-src/SnipSearch.vbs         runs the script without a console window
+Install-SnipSearch.ps1         registers or removes the hotkeys
+src/Invoke-SnipSearch.ps1      capture and routing
+src/Install-BarcodeReader.ps1  fetches and verifies ZXing.NET
+src/SnipSearch.vbs             runs the script without a console window
 ```
 
 ## Development

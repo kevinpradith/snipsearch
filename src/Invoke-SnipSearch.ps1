@@ -52,12 +52,6 @@ Add-Type -AssemblyName System.Windows.Forms
 # Links we should follow rather than search for, from a QR code or from OCR.
 $LinkPattern = '^\s*((https?|ftp)://|www\.)\S+\s*$|^\s*(mailto|tel|bitcoin|upi):\S+\s*$'
 
-# WSL sees C:\foo as /mnt/c/foo.
-function ConvertTo-WslPath {
-    param([Parameter(Mandatory)][string]$Path)
-    '/mnt/' + $Path.Substring(0, 1).ToLower() + $Path.Substring(2).Replace('\', '/')
-}
-
 function Open-Result {
     param([Parameter(Mandatory)][string]$Text)
 
@@ -93,30 +87,32 @@ function Get-ScreenSnip {
 
 function Read-Barcode {
     <# Returns the payload of a QR code or barcode in the image, else $null.
-       Decoding needs OpenCV under WSL; without it the step is simply skipped. #>
+       Windows has no barcode API, so this needs the ZXing.NET assembly the
+       installer fetches; without it the step is skipped rather than failing. #>
     param([Parameter(Mandatory)][string]$Path)
 
-    $python = & (Join-Path $PSScriptRoot 'Get-WslPython.ps1')
-    if (-not $python) { return $null }
+    $assembly = Join-Path $env:LOCALAPPDATA 'SnipSearch\zxing.dll'
+    if (-not (Test-Path -LiteralPath $assembly)) {
+        Write-Verbose 'ZXing.NET is not installed, skipping barcode detection.'
+        return $null
+    }
 
     try {
-        $payload = & wsl.exe -e $python `
-            (ConvertTo-WslPath (Join-Path $PSScriptRoot 'scan_barcode.py')) `
-            (ConvertTo-WslPath $Path) 2>$null
+        Add-Type -Path $assembly
+        Add-Type -AssemblyName System.Drawing
+
+        $reader = New-Object ZXing.BarcodeReader
+        $reader.AutoRotate = $true          # A snip of a screen is rarely square on.
+        $reader.Options.TryHarder = $true
+
+        $bitmap = New-Object System.Drawing.Bitmap $Path
+        try { $result = $reader.Decode($bitmap) } finally { $bitmap.Dispose() }
     } catch {
-        Write-Verbose "Barcode scan could not run: $_"
+        Write-Verbose "Barcode detection did not run: $_"
         return $null
     }
 
-    # 0 payload, 1 nothing found; anything else means the interpreter went
-    # stale, so drop the cached answer and let the next run look again.
-    if ($LASTEXITCODE -gt 1) {
-        & (Join-Path $PSScriptRoot 'Get-WslPython.ps1') -Refresh | Out-Null
-        return $null
-    }
-    if ($LASTEXITCODE -ne 0 -or -not $payload) { return $null }
-
-    ($payload | Select-Object -First 1).Trim()
+    if ($result) { $result.Text } else { $null }
 }
 
 function Read-ImageText {
