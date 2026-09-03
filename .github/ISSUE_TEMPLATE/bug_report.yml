@@ -1,0 +1,52 @@
+name: Bug report
+description: Something does not behave the way the README says it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you snip, which hotkey did you press, and what opened?
+      placeholder: Pressed Ctrl+Alt+L on a QR code in a PDF; Google Lens opened instead of the link.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: verbose-output
+    attributes:
+      label: Output with -Verbose
+      description: >
+        Run the snip again through the script directly, which prints why a step
+        was skipped. Paste the output here.
+      value: |
+        ```
+        powershell -NoProfile -ExecutionPolicy Bypass -File .\src\Invoke-SnipSearch.ps1 -Verbose
+        ```
+    validations:
+      required: false
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      description: Run `winver`, or `[Environment]::OSVersion.Version` in PowerShell.
+      placeholder: 10.0.26200
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before opening this
+      options:
+        - label: I ran `Install-SnipSearch.ps1` and it reported all three shortcuts.
+          required: true
+        - label: The snip itself worked, so the problem is in where it was routed.
+          required: false
