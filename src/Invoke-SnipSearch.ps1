@@ -163,11 +163,18 @@ function Search-WithLens {
     param([Parameter(Mandatory)][string]$Path)
 
     # curl.exe ships with Windows; the upload answers with the results page.
-    $url = & curl.exe --silent --location --output NUL --write-out '%{url_effective}' `
+    $url = & curl.exe --silent --location --max-time 20 --output NUL --write-out '%{url_effective}' `
         --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' `
         --form "encoded_image=@$Path" 'https://lens.google.com/v3/upload'
 
-    if ($url -like 'http*') { Start-Process $url; return $true }
+    if ($url -like 'http*') {
+        Start-Process $url
+        return $true
+    }
+
+    # Nothing opened, so say so rather than failing silently behind a hotkey.
+    [Windows.Forms.MessageBox]::Show(
+        'The snip could not be uploaded to Google Lens.', 'SnipSearch') | Out-Null
     $false
 }
 
