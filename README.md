@@ -47,15 +47,58 @@ of a camera does not turn into a search for the word printed on its body.
 
 ## Install
 
+You need Windows 11. Everything the tool runs on already ships with it, so
+there is nothing to build and no runtime to install first.
+
+### 1. Get the files
+
+Somewhere you intend to leave them. The hotkeys point at this folder by its
+full path, so moving it later breaks them until you run the installer again.
+
+With git:
+
 ```powershell
 git clone https://github.com/kevinpradith/snipsearch.git
 cd snipsearch
+```
+
+Without git: download the
+[latest release](https://github.com/kevinpradith/snipsearch/releases/latest) as
+a ZIP, extract it, and unblock the files, because Windows marks anything that
+came from the internet and refuses to run it otherwise:
+
+```powershell
+cd path\to\snipsearch
+Get-ChildItem -Recurse | Unblock-File
+```
+
+### 2. Run the installer
+
+```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File Install-SnipSearch.ps1
 ```
 
-The installer registers three Start Menu shortcuts, which is how Windows hands
-out a global hotkey, and fetches the barcode library. Running it again is safe.
-`-Uninstall` removes the shortcuts.
+`-ExecutionPolicy Bypass` is there because Windows blocks unsigned scripts by
+default. It applies to this one command only and changes nothing on the
+machine.
+
+It should print four lines:
+
+```
+CTRL+ALT+L  SnipSearch.lnk
+CTRL+ALT+K  SnipSearch (image).lnk
+CTRL+ALT+T  SnipSearch (text).lnk
+ready       C:\Users\you\AppData\Local\SnipSearch\zxing.dll
+```
+
+The first three are the hotkeys. The fourth is the barcode library. A warning
+instead of that last line means only barcode reading is unavailable; the rest
+works.
+
+### 3. Use it
+
+Press `Ctrl+Alt+L`. The Windows snip overlay dims the screen; drag a box around
+whatever you want to look up, and a browser tab opens with the answer.
 
 | Key | Mode |
 | --- | --- |
@@ -63,9 +106,30 @@ out a global hotkey, and fetches the barcode library. Running it again is safe.
 | `Ctrl+Alt+K` | force Google Lens, for a picture that has text on it |
 | `Ctrl+Alt+T` | force the text lookup, and copy the text to the clipboard |
 
+If nothing happens, see [the hotkey does nothing](#the-hotkey-does-nothing).
+
 Windows reserves the `Ctrl+Alt` prefix for shortcut hotkeys, so only the final
 key can be changed, in each shortcut's properties or in the table at the top of
 `Install-SnipSearch.ps1`.
+
+### Updating and removing
+
+```powershell
+git pull
+powershell -NoProfile -ExecutionPolicy Bypass -File Install-SnipSearch.ps1
+```
+
+Re-running the installer is always safe; it overwrites the shortcuts in place.
+Run it after moving the folder, too.
+
+To remove the hotkeys:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File Install-SnipSearch.ps1 -Uninstall
+```
+
+That leaves the folder and the downloaded library alone. Delete the folder and
+`%LOCALAPPDATA%\SnipSearch` to remove every trace.
 
 ### Triggering it from the touchpad
 
@@ -76,7 +140,10 @@ the phone gesture that cannot be reproduced.
 
 ## Requirements
 
-Windows 11, and nothing you have to install:
+Windows 11, and nothing you have to install. It runs on the Windows PowerShell
+5.1 that ships with Windows, not PowerShell 7, because text recognition goes
+through WinRT, which only .NET Framework can load. The shortcuts call the right
+one for you.
 
 | Job | What does it |
 | --- | --- |
@@ -100,24 +167,43 @@ which sends the recognized text as an ordinary search query. See
 
 ## Troubleshooting
 
-**The hotkey does nothing.** Windows registers shortcut hotkeys when Explorer
-starts, and a shortcut that replaced an older one can be left unregistered.
-Restart Explorer:
+### The hotkey does nothing
+
+Windows registers shortcut hotkeys when Explorer starts, and a shortcut that
+replaced an older one can be left unregistered. Restart Explorer:
 
 ```powershell
 Stop-Process -Name explorer -Force
 ```
 
-**A photo keeps turning into a text search, or the other way around.** Move the
-threshold and see which way it needs to go:
+If it still does nothing, another program may already own `Ctrl+Alt+L`. Change
+the key in the shortcut's properties, under Start menu → All apps → SnipSearch,
+right click → More → Open file location, then right click the shortcut →
+Properties → Shortcut key.
+
+### It stopped working after I moved the folder
+
+The shortcuts hold the full path to the launcher. Run `Install-SnipSearch.ps1`
+again from the new location.
+
+### "running scripts is disabled on this system"
+
+You ran the script without `-ExecutionPolicy Bypass`. Use the full command in
+[Install](#2-run-the-installer). If you downloaded a ZIP rather than cloning,
+run `Get-ChildItem -Recurse | Unblock-File` in the folder first.
+
+### A photo keeps turning into a text search, or the other way around
+
+Move the threshold and see which way it needs to go:
 
 ```powershell
 .\src\Invoke-SnipSearch.ps1 -Image .\sample.png -TextCoverage 0.10 -Verbose
 ```
 
-**Barcodes are never detected.** Re-run the installer; it reports the assembly
-path when the download succeeded. `-Verbose` on the script says when the step
-was skipped.
+### Barcodes are never detected
+
+Re-run the installer; it reports the assembly path when the download succeeded.
+`-Verbose` on the script says when the step was skipped.
 
 ## Layout
 

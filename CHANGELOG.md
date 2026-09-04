@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The script refuses to run under PowerShell 7 with an explanation, rather than
+  failing inside the text recognition step.
+
+### Changed
+
+- The README walks through installing step by step, including getting the files
+  without git, what the installer should print, and what to do after moving the
+  folder.
+
 ## [0.1.0] - 2026-09-04
 
 ### Added
