@@ -47,6 +47,12 @@ param(
 )
 
 Set-StrictMode -Version Latest
+
+# Text recognition loads WinRT types, which only .NET Framework projects.
+if ($PSVersionTable.PSEdition -eq 'Core') {
+    throw 'Run this with Windows PowerShell 5.1 (powershell.exe), not PowerShell 7.'
+}
+
 Add-Type -AssemblyName System.Windows.Forms
 
 # Links we should follow rather than search for, from a QR code or from OCR.
